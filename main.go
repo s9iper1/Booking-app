@@ -4,6 +4,7 @@ import (
 	"booking-app/helper"
 	"fmt"
 	"github.com/jung-kurt/gofpdf"
+	"sync"
 	"time"
 )
 
@@ -21,44 +22,46 @@ type userData struct {
 	userTickets uint
 }
 
+var wg = sync.WaitGroup{}
+
 func main() {
 
 	// fmt.Printf("conferenceName type is %T", conferenceName)
 	greetUser()
 
-	for {
+	//for {
 
-		firstName, lastName, email, userTickets := getUserInput()
+	firstName, lastName, email, userTickets := getUserInput()
 
-		//validation
+	//validation
 
-		isValidName, isValidEmail, isValidUserTickets := helper.ValidateUserInput(firstName, lastName, email, userTickets, remainingTickets)
+	isValidName, isValidEmail, isValidUserTickets := helper.ValidateUserInput(firstName, lastName, email, userTickets, remainingTickets)
 
-		if isValidName && isValidEmail && isValidUserTickets {
-			bookTickets(userTickets, firstName, lastName, email)
+	if isValidName && isValidEmail && isValidUserTickets {
+		bookTickets(userTickets, firstName, lastName, email)
+		wg.Add(1)
+		go sendTicket(firstName, lastName, userTickets, email)
+		// print firstname
+		fmt.Printf("First names for bookings are : %v\n", getFirstNames())
 
-			go sendTicket(firstName, lastName, userTickets, email)
-			// print firstname
-			fmt.Printf("First names for bookings are : %v\n", getFirstNames())
-
-			if remainingTickets == 0 {
-				fmt.Println("Our conference is booked out, come back again next year")
-				break
-			}
-
-		} else {
-			if !isValidName {
-				fmt.Println("first name or last name is too short")
-			}
-			if !isValidEmail {
-				fmt.Println("The email address is invalid")
-			}
-			if !isValidUserTickets {
-				fmt.Println("Number of the tickets you entered is invalid")
-			}
+		if remainingTickets == 0 {
+			fmt.Println("Our conference is booked out, come back again next year")
 		}
 
+	} else {
+		if !isValidName {
+			fmt.Println("first name or last name is too short")
+		}
+		if !isValidEmail {
+			fmt.Println("The email address is invalid")
+		}
+		if !isValidUserTickets {
+			fmt.Println("Number of the tickets you entered is invalid")
+		}
 	}
+
+	//}
+	wg.Wait()
 
 }
 
@@ -143,4 +146,5 @@ func generatePdf(message string, email string) {
 	if error == nil {
 		fmt.Println("Pdf generated successfully")
 	}
+	wg.Done()
 }
