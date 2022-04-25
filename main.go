@@ -3,6 +3,8 @@ package main
 import (
 	"booking-app/helper"
 	"fmt"
+	"github.com/jung-kurt/gofpdf"
+	"time"
 )
 
 var conferenceName string = "Go conference"
@@ -34,6 +36,8 @@ func main() {
 
 		if isValidName && isValidEmail && isValidUserTickets {
 			bookTickets(userTickets, firstName, lastName, email)
+
+			sendTicket(firstName, lastName, userTickets, email)
 			// print firstname
 			fmt.Printf("First names for bookings are : %v\n", getFirstNames())
 
@@ -111,4 +115,32 @@ func bookTickets(userTickets uint, firstName, lastName string, email string) {
 		firstName, lastName, userTickets, email)
 
 	fmt.Printf("%v tickets remaining for %v\n", remainingTickets, conferenceName)
+}
+
+func sendTicket(firstName string, lastName string, userTickets uint, email string) {
+	time.Sleep(1 * time.Second)
+	var ticket = fmt.Sprintf("%v tickets for %v %v", userTickets, firstName, lastName)
+	fmt.Println("################")
+	var fullMessage = fmt.Sprintf("Sending tickets:\n %v \nto email address %v\n", ticket, email)
+	fmt.Println(fullMessage)
+	var pdfText = fmt.Sprintf("Dear %v\nThank you for purchasing the %v tickets, please show this ticket printed or digital form while entering "+
+		"the venue\n", firstName, userTickets)
+	fmt.Println("################")
+	generatePdf(pdfText, email)
+}
+
+func generatePdf(message string, email string) {
+	pdf := gofpdf.New("P", "mm", "A4", "")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+	pdf.MoveTo(0, 10)
+	pdf.Cell(1, 1, "GO Conference")
+	pdf.SetFont("Arial", "", 16)
+	pdf.MoveTo(0, 20)
+	width, _ := pdf.GetPageSize()
+	pdf.MultiCell(width, 10, string(message), "", "", false)
+	error := pdf.OutputFileAndClose(email + "_" + time.ANSIC + ".pdf")
+	if error == nil {
+		fmt.Println("Pdf generated successfully")
+	}
 }
